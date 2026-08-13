@@ -19,12 +19,8 @@ from homeassistant.helpers.selector import (
 
 from .cloud import AuthenticationError, CloudError, VivaxCloudClient
 from .const import (
-    CONF_APP_SECRET,
     CONF_APPLIANCE_CODE,
-    CONF_CLIENT_ID,
-    CONF_CLIENT_SECRET,
     CONF_DEVICE_NAME,
-    CONF_ENCRYPTION_KEY,
     CONF_MODEL,
     CONF_REGION,
     CONF_SN8,
@@ -34,18 +30,10 @@ from .const import (
     REGION_URLS,
     REGION_US,
 )
-from .models import ApplicationCredentials, VivaxDevice
+from .models import VivaxDevice
+from .vendor import APPLICATION
 
 SECRET_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
-
-APPLICATION_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_APP_SECRET): SECRET_SELECTOR,
-        vol.Required(CONF_CLIENT_ID): str,
-        vol.Required(CONF_CLIENT_SECRET): SECRET_SELECTOR,
-        vol.Required(CONF_ENCRYPTION_KEY): SECRET_SELECTOR,
-    }
-)
 
 ACCOUNT_SCHEMA = vol.Schema(
     {
@@ -65,39 +53,23 @@ ACCOUNT_SCHEMA = vol.Schema(
 class VivaxEcoLinkConfigFlow(ConfigFlow, domain=DOMAIN):
     """Configure VIVAX EcoLink."""
 
-    VERSION = 3
+    VERSION = 4
 
     def __init__(self) -> None:
-        self._application: dict[str, str] = {}
         self._account: dict[str, str] = {}
         self._devices: list[VivaxDevice] = []
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Collect application credentials first."""
-        if user_input is not None:
-            self._application = dict(user_input)
-            return await self.async_step_account()
-        return self.async_show_form(step_id="user", data_schema=APPLICATION_SCHEMA)
-
-    async def async_step_account(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
         """Authenticate the EcoLink account and discover devices."""
         errors: dict[str, str] = {}
         if user_input is not None:
             self._account = dict(user_input)
-            application = ApplicationCredentials(
-                app_secret=self._application[CONF_APP_SECRET],
-                client_id=self._application[CONF_CLIENT_ID],
-                client_secret=self._application[CONF_CLIENT_SECRET],
-                encryption_key=self._application[CONF_ENCRYPTION_KEY],
-            )
             client = VivaxCloudClient(
                 async_get_clientsession(self.hass),
                 REGION_URLS[self._account[CONF_REGION]],
-                application,
+                APPLICATION,
             )
             try:
                 await client.login(
@@ -116,7 +88,7 @@ class VivaxEcoLinkConfigFlow(ConfigFlow, domain=DOMAIN):
                 else:
                     return await self.async_step_device()
         return self.async_show_form(
-            step_id="account", data_schema=ACCOUNT_SCHEMA, errors=errors
+            step_id="user", data_schema=ACCOUNT_SCHEMA, errors=errors
         )
 
     async def async_step_device(
@@ -136,7 +108,6 @@ class VivaxEcoLinkConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(
                 title="VIVAX EcoLink Heat Pump",
                 data={
-                    **self._application,
                     **self._account,
                     CONF_APPLIANCE_CODE: appliance_code,
                     CONF_DEVICE_NAME: device.name,

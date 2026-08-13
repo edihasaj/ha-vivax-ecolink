@@ -24,9 +24,8 @@ state class and can be selected in the Energy dashboard.
   this controller.
 - Cooling totals are derived as total minus heating. This is valid only on an
   installation without domestic-hot-water hardware.
-- This project does not distribute VIVAX application signing secrets. You must
-  obtain the four application credentials legally from VIVAX, your installer,
-  or your own installed EcoLink application build.
+- The integration includes the static application identity used by the official
+  EcoLink client. These shared values are not user or device credentials.
 
 ## Install with HACS
 
@@ -41,37 +40,27 @@ state class and can be selected in the Energy dashboard.
 
 ## Setup
 
-Prepare:
+Prepare your EcoLink account email/password and account region, normally Europe
+for VIVAX. Use a dedicated EcoLink account shared with the heat pump rather than
+your primary account. The first setup page authenticates the account and the
+second lets you select the device.
 
-- application secret
-- client ID
-- client secret
-- password encryption key
-- EcoLink account email and password
-- the account region, normally Europe for VIVAX
-
-The first setup page stores the four application credentials as masked Home
-Assistant config-entry fields. The second page authenticates the EcoLink
-account. Use a dedicated EcoLink account shared with the heat pump rather than
-your primary account. The final page lets you select the device.
-
-These values remain in Home Assistant's private `.storage` configuration. They
-are redacted from diagnostics and never written by this integration to logs or
-files.
+Your email and password remain in Home Assistant's private `.storage`
+configuration. They are redacted from diagnostics and never written by this
+integration to logs or files.
 
 ## Token expiry
 
 Access tokens exist only in Home Assistant memory. On startup, or whenever the
 cloud rejects an expired token, the integration logs in again with the stored
 EcoLink account password and retries the update. Manual reauthentication is
-needed only after an account password, application credential, or vendor API
-change.
+needed only after an account password or vendor API change.
 
 ## Troubleshooting
 
 - **Invalid email or password:** confirm the account works in the official app.
-- **Unable to authenticate:** verify Europe/United States and all four
-  application credentials.
+- **Unable to authenticate:** verify the account region and that EcoLink's cloud
+  is available.
 - **Unavailable entities:** confirm the controller is online in EcoLink. The
   vendor cloud can briefly delay responses.
 - Never post diagnostics together with raw `.storage` files. Diagnostics from

@@ -2,16 +2,6 @@
   "config": {
     "step": {
       "user": {
-        "title": "VIVAX EcoLink application credentials",
-        "description": "Enter the four application credentials obtained from your official VIVAX EcoLink app. They are stored only in Home Assistant.",
-        "data": {
-          "app_secret": "Application secret",
-          "client_id": "Client ID",
-          "client_secret": "Client secret",
-          "encryption_key": "Password encryption key"
-        }
-      },
-      "account": {
         "title": "VIVAX EcoLink account",
         "description": "Use a dedicated EcoLink account shared with the heat pump.",
         "data": {

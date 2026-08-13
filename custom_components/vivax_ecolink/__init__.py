@@ -14,7 +14,7 @@ from .const import (
     PLATFORMS,
 )
 
-REQUIRED_APPLICATION_FIELDS = {
+LEGACY_APPLICATION_FIELDS = {
     CONF_APP_SECRET,
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
@@ -43,12 +43,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate private prototype entries to the public package format."""
-    if not REQUIRED_APPLICATION_FIELDS.issubset(entry.data):
-        return False
-    if entry.version < 3 or entry.title != "VIVAX EcoLink Heat Pump":
+    data = {
+        key: value
+        for key, value in entry.data.items()
+        if key not in LEGACY_APPLICATION_FIELDS
+    }
+    if entry.version < 4 or entry.title != "VIVAX EcoLink Heat Pump":
         hass.config_entries.async_update_entry(
             entry,
+            data=data,
             title="VIVAX EcoLink Heat Pump",
-            version=3,
+            version=4,
         )
     return True

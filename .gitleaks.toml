@@ -1,0 +1,10 @@
+title = "VIVAX EcoLink secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Shared, non-user VIVAX application identity"
+paths = [
+  '''custom_components/vivax_ecolink/vendor\.py''',
+]

@@ -12,18 +12,15 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .cloud import AuthenticationError, CloudError, VivaxCloudClient
 from .const import (
-    CONF_APP_SECRET,
     CONF_APPLIANCE_CODE,
-    CONF_CLIENT_ID,
-    CONF_CLIENT_SECRET,
-    CONF_ENCRYPTION_KEY,
     CONF_REGION,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     REGION_URLS,
 )
-from .models import ApplicationCredentials, VivaxTelemetry
+from .models import VivaxTelemetry
 from .protocol import ProtocolError, decode_telemetry
+from .vendor import APPLICATION
 
 
 class VivaxCoordinator(DataUpdateCoordinator[VivaxTelemetry]):
@@ -38,16 +35,10 @@ class VivaxCoordinator(DataUpdateCoordinator[VivaxTelemetry]):
         )
         self.entry = entry
         self.appliance_code = str(entry.data[CONF_APPLIANCE_CODE])
-        application = ApplicationCredentials(
-            app_secret=entry.data[CONF_APP_SECRET],
-            client_id=entry.data[CONF_CLIENT_ID],
-            client_secret=entry.data[CONF_CLIENT_SECRET],
-            encryption_key=entry.data[CONF_ENCRYPTION_KEY],
-        )
         self.client = VivaxCloudClient(
             async_get_clientsession(hass),
             REGION_URLS[entry.data[CONF_REGION]],
-            application,
+            APPLICATION,
         )
 
     async def _login(self) -> None:
