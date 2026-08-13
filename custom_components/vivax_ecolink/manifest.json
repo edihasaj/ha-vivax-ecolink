@@ -1,0 +1,13 @@
+{
+  "domain": "vivax_ecolink",
+  "name": "VIVAX EcoLink",
+  "after_dependencies": ["hacs"],
+  "codeowners": ["@edihasaj"],
+  "config_flow": true,
+  "documentation": "https://github.com/edihasaj/ha-vivax-ecolink",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/edihasaj/ha-vivax-ecolink/issues",
+  "requirements": ["cryptography>=45.0.0"],
+  "version": "0.1.0"
+}

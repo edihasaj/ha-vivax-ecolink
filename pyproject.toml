@@ -1,0 +1,26 @@
+[project]
+name = "ha-vivax-ecolink"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+  "aiohttp>=3.12",
+  "cryptography>=45",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4",
+  "pytest-asyncio>=1.1",
+  "ruff>=0.12",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]

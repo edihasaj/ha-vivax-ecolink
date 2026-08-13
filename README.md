@@ -1,0 +1,92 @@
+# VIVAX EcoLink for Home Assistant
+
+Cloud monitoring for the VIVAX EcoLink `KJRH-120L` heating and cooling
+controller. The integration uses the same EcoLink account as the official
+Android application and refreshes expired login tokens automatically.
+
+## Supported data
+
+- Zone 1 target and controller power state
+- heating/cooling operating mode and compressor frequency
+- outdoor, water inlet, and water outlet temperatures
+- current electrical power
+- total, heating, and cooling electricity and thermal energy
+- lifetime and heating coefficient of performance (COP)
+
+The cumulative electricity sensors use Home Assistant's `total_increasing`
+state class and can be selected in the Energy dashboard.
+
+## Current limitations
+
+- Tested hardware: `KJRH-120L`, C3 model code `17100003`.
+- Monitoring only. Power, mode, target-temperature, DHW, and curve writes are
+  intentionally unavailable until their commands are captured and verified on
+  this controller.
+- Cooling totals are derived as total minus heating. This is valid only on an
+  installation without domestic-hot-water hardware.
+- This project does not distribute VIVAX application signing secrets. You must
+  obtain the four application credentials legally from VIVAX, your installer,
+  or your own installed EcoLink application build.
+
+## Install with HACS
+
+1. Open **HACS**, then its top-right menu.
+2. Select **Custom repositories**.
+3. Add `https://github.com/edihasaj/ha-vivax-ecolink` as an **Integration**.
+4. Download **VIVAX EcoLink** and restart Home Assistant.
+5. Open **Settings → Devices & services → Add integration** and search for
+   **VIVAX EcoLink**.
+
+[![Open your Home Assistant instance and add this repository to HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=edihasaj&repository=ha-vivax-ecolink&category=integration)
+
+## Setup
+
+Prepare:
+
+- application secret
+- client ID
+- client secret
+- password encryption key
+- EcoLink account email and password
+- the account region, normally Europe for VIVAX
+
+The first setup page stores the four application credentials as masked Home
+Assistant config-entry fields. The second page authenticates the EcoLink
+account. Use a dedicated EcoLink account shared with the heat pump rather than
+your primary account. The final page lets you select the device.
+
+These values remain in Home Assistant's private `.storage` configuration. They
+are redacted from diagnostics and never written by this integration to logs or
+files.
+
+## Token expiry
+
+Access tokens exist only in Home Assistant memory. On startup, or whenever the
+cloud rejects an expired token, the integration logs in again with the stored
+EcoLink account password and retries the update. Manual reauthentication is
+needed only after an account password, application credential, or vendor API
+change.
+
+## Troubleshooting
+
+- **Invalid email or password:** confirm the account works in the official app.
+- **Unable to authenticate:** verify Europe/United States and all four
+  application credentials.
+- **Unavailable entities:** confirm the controller is online in EcoLink. The
+  vendor cloud can briefly delay responses.
+- Never post diagnostics together with raw `.storage` files. Diagnostics from
+  this integration redact all configured secrets.
+
+## Development
+
+```bash
+uv sync --all-groups
+uv run pytest
+uv run ruff check .
+uv run ruff format --check .
+```
+
+## License
+
+MIT. This is an independent community integration, not an official VIVAX
+product and not affiliated with VIVAX.

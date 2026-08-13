@@ -1,0 +1,69 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "VIVAX EcoLink application credentials",
+        "description": "Enter the four application credentials obtained from your official VIVAX EcoLink app. They are stored only in Home Assistant.",
+        "data": {
+          "app_secret": "Application secret",
+          "client_id": "Client ID",
+          "client_secret": "Client secret",
+          "encryption_key": "Password encryption key"
+        }
+      },
+      "account": {
+        "title": "VIVAX EcoLink account",
+        "description": "Use a dedicated EcoLink account shared with the heat pump.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "region": "Region"
+        }
+      },
+      "device": {
+        "title": "Select heat pump",
+        "description": "Choose the KJRH-120L heating and cooling controller.",
+        "data": {
+          "appliance_code": "Device"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "EcoLink rejected the email or password.",
+      "cannot_connect": "Unable to authenticate. Check the region and application credentials.",
+      "no_devices": "Login succeeded but the account contains no devices.",
+      "unknown": "Unexpected setup error. Check the Home Assistant log."
+    },
+    "abort": {
+      "already_configured": "This heat pump is already configured."
+    }
+  },
+  "selector": {
+    "region": {
+      "options": {
+        "eu": "Europe",
+        "us": "United States"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "zone1_target": {"name": "Zone 1 target"},
+      "controller_power": {"name": "Controller power"},
+      "operating_mode": {"name": "Operating mode"},
+      "compressor_frequency": {"name": "Compressor frequency"},
+      "outdoor_temperature": {"name": "Outdoor temperature"},
+      "water_inlet_temperature": {"name": "Water inlet temperature"},
+      "water_outlet_temperature": {"name": "Water outlet temperature"},
+      "current_power": {"name": "Current power"},
+      "total_electricity": {"name": "Total electricity"},
+      "total_thermal_energy": {"name": "Total thermal energy"},
+      "heating_electricity": {"name": "Heating electricity"},
+      "heating_thermal_energy": {"name": "Heating thermal energy"},
+      "cooling_electricity": {"name": "Cooling electricity"},
+      "cooling_thermal_energy": {"name": "Cooling thermal energy"},
+      "lifetime_cop": {"name": "Lifetime COP"},
+      "heating_cop": {"name": "Heating COP"}
+    }
+  }
+}
