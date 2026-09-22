@@ -11,7 +11,7 @@ import time
 import uuid
 from typing import Any
 
-from aiohttp import ClientError, ClientSession, ClientTimeout
+from aiohttp import ClientError, ClientResponseError, ClientSession, ClientTimeout
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
@@ -97,6 +97,11 @@ class VivaxCloudClient:
             ) as response:
                 response.raise_for_status()
                 result = await response.json(content_type=None)
+        except ClientResponseError as err:
+            if err.status == 401:
+                self._access_token = None
+                raise AuthenticationError("EcoLink access token expired") from err
+            raise CloudError("Unable to communicate with VIVAX EcoLink") from err
         except (ClientError, TimeoutError, ValueError) as err:
             raise CloudError("Unable to communicate with VIVAX EcoLink") from err
         if not isinstance(result, dict):
