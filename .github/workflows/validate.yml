@@ -60,3 +60,19 @@ jobs:
           uv run ruff check .
           uv run ruff format --check .
           uv run pytest
+
+  native-actions:
+    name: Native Home Assistant actions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test with Home Assistant, no network or real appliances
+        run: |
+          docker run --rm --network none \
+            --volume "$GITHUB_WORKSPACE:/candidate:ro" --workdir /candidate \
+            --entrypoint python \
+            ghcr.io/home-assistant/home-assistant:2026.8.3@sha256:14931c6b13756317849f46da1d01b45937a1150db66c081cfe529d48215943fe \
+            -m unittest discover -s tests -p test_ha_actions.py -v

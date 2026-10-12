@@ -37,6 +37,9 @@
     }
   },
   "entity": {
+    "switch": {
+      "zone1_power": {"name": "Zone 1 power"}
+    },
     "sensor": {
       "zone1_target": {"name": "Zone 1 target"},
       "controller_power": {"name": "Controller power"},

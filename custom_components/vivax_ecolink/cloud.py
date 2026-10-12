@@ -17,7 +17,12 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from .const import APP_ID, APP_KEY, APP_VERSION
 from .models import ApplicationCredentials, VivaxDevice
-from .protocol import decode_cloud_payload, short_query
+from .protocol import (
+    decode_cloud_payload,
+    short_query,
+    validate_power_ack,
+    zone1_power_command,
+)
 
 
 class CloudError(Exception):
@@ -190,3 +195,16 @@ class VivaxCloudClient:
                 f"EcoLink device query failed with code {result.get('code')}"
             )
         return decode_cloud_payload(result["data"], subtype)
+
+    async def set_zone1_power(self, appliance_code: str, enabled: bool) -> None:
+        """Write only the exact-model vendor codec's Zone-1 power field."""
+        command = zone1_power_command(enabled)
+        result = await self._business_request(
+            "/midea/open/business/v1/appliance/control/hexadecimal",
+            {"applianceCode": appliance_code, "command": command},
+        )
+        if result.get("code") != 0 or not isinstance(result.get("data"), str):
+            raise CloudError(
+                f"EcoLink power command failed with code {result.get('code')}"
+            )
+        validate_power_ack(result["data"], enabled)

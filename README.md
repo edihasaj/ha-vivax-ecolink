@@ -1,8 +1,9 @@
 # VIVAX EcoLink for Home Assistant
 
-Cloud monitoring for the VIVAX EcoLink `KJRH-120L` heating and cooling
-controller. The integration uses the same EcoLink account as the official
-Android application and refreshes expired login tokens automatically.
+Cloud monitoring and Zone-1 power control for the VIVAX EcoLink `KJRH-120L`
+heating and cooling controller. The integration uses the same EcoLink account
+as the official Android application and refreshes expired login tokens
+automatically.
 
 ## Supported data
 
@@ -19,9 +20,12 @@ state class and can be selected in the Energy dashboard.
 ## Current limitations
 
 - Tested hardware: `KJRH-120L`, C3 model code `17100003`.
-- Monitoring only. Power, mode, target-temperature, DHW, and curve writes are
-  intentionally unavailable until their commands are captured and verified on
-  this controller.
+- The **Zone 1 power** switch controls house heating/cooling, not DHW or the
+  controller's electrical supply. It uses the exact model's vendor codec,
+  preserves the target/mode/curve settings and confirms changes with fresh
+  read-back. It does not optimistically report a requested state.
+- Mode, target-temperature, DHW, Zone-2 and curve writes remain unavailable.
+  See [control protocol and verification](docs/control-protocol.md).
 - Cooling totals are derived as total minus heating. This is valid only on an
   installation without domestic-hot-water hardware.
 - The integration includes the static application identity used by the official
@@ -74,6 +78,10 @@ uv run pytest
 uv run ruff check .
 uv run ruff format --check .
 ```
+
+CI also runs the action tests inside the pinned Home Assistant container, with
+networking disabled and a mocked cloud client. This checks native coordinator
+and switch behavior without operating any real appliance.
 
 ## License
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "vivax_ecolink"
-PLATFORMS: Final = ["sensor"]
+PLATFORMS: Final = ["sensor", "switch"]
 
 CONF_APPLIANCE_CODE: Final = "appliance_code"
 CONF_APP_SECRET: Final = "app_secret"

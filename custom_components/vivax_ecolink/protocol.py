@@ -19,6 +19,31 @@ def short_query(subtype: int) -> str:
     return f"ffff{subtype:02x}{subtype:02x}{subtype:02x}ff"
 
 
+def zone1_power_command(enabled: bool) -> str:
+    """Encode only Zone-1 power using the 17100003 vendor codec's field 0."""
+    if type(enabled) is not bool:
+        raise ValueError("Zone-1 power must be a boolean")
+    return f"000001{int(enabled):02x}ff"
+
+
+def validate_power_ack(response_hex: str, enabled: bool) -> None:
+    """Require a checksummed C3 control response echoing the requested field."""
+    try:
+        raw = bytes.fromhex(response_hex.replace(",", " "))
+    except ValueError as err:
+        raise ProtocolError("Power acknowledgement is not hexadecimal") from err
+    if (
+        len(raw) != 16
+        or raw[0] != 0xAA
+        or raw[1] != len(raw) - 1
+        or raw[2] != DEVICE_TYPE_C3
+        or raw[9] != 0x02
+        or sum(raw[1:]) & 0xFF
+        or raw[10:-1] != bytes.fromhex(zone1_power_command(enabled))
+    ):
+        raise ProtocolError("EcoLink did not acknowledge the Zone-1 power command")
+
+
 def decode_cloud_payload(response_hex: str, expected_subtype: int) -> bytes:
     """Remove the outer C3 frame and VIVAX declared-length envelope."""
     try:

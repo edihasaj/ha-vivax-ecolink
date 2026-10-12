@@ -1,0 +1,1 @@
+"""VIVAX integration regression tests."""
