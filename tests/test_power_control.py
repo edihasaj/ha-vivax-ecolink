@@ -8,6 +8,7 @@ import pytest
 
 from custom_components.vivax_ecolink.cloud import CloudError
 from custom_components.vivax_ecolink.control import (
+    PROTECTED_SETTINGS,
     PowerControlError,
     async_set_zone1_power,
 )
@@ -130,10 +131,16 @@ async def test_changed_targets_modes_curves_or_other_zones_are_not_accepted(
     changed = bytearray(OFF)
     changed[setting] ^= 1
     write = AsyncMock()
-    with pytest.raises(PowerControlError, match="settings changed"):
+    with pytest.raises(PowerControlError, match="settings changed") as error:
         await async_set_zone1_power(
             AsyncMock(side_effect=[ON, bytes(changed)]), write, False
         )
+    assert (
+        f"{PROTECTED_SETTINGS[setting - 1]} {ON[setting]} -> {changed[setting]}"
+        in str(error.value)
+    )
+    assert "Observed Zone-1 power: Off" in str(error.value)
+    assert "check EcoLink" not in str(error.value)
     write.assert_awaited_once_with(False)
 
 

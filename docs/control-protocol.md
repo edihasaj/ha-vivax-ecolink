@@ -68,6 +68,14 @@ are not logged. This diagnostic change does not relax validation or change the
 wire command. A failed action may already have reached the controller; check
 EcoLink before retrying and do not repeatedly cycle power.
 
+Version 0.2.2 identifies each changed basic setting by its vendor-defined name
+and before/after byte value, alongside the observed Zone-1 power. Only positions
+1–9 are reported, never an entire payload or identity block. The settings guard
+still fails closed; a valid acknowledgement followed by this error is not a
+cloud rejection, and may mean the requested power did change. Do not ignore
+coupled-zone, mode or target differences without captured evidence of their
+meaning.
+
 Protocol and isolated tests do not establish a live hardware power cycle.
 Before claiming hardware verification, obtain approval for one supervised
 Off/On cycle, record fresh before/after settings, and confirm the controller

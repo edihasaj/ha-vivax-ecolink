@@ -12,6 +12,20 @@ ReadStatus = Callable[[], Awaitable[bytes]]
 WritePower = Callable[[bool], Awaitable[None]]
 Sleep = Callable[[float], Awaitable[None]]
 
+# Byte positions verified against the exact 17100003 vendor codec. These nine
+# basic values contain no credentials, serial numbers or appliance identifiers.
+PROTECTED_SETTINGS = (
+    "Zone-2 power",
+    "DHW power",
+    "commanded mode",
+    "Zone-1 target",
+    "Zone-2 target",
+    "room target",
+    "DHW target",
+    "Zone-1 curve",
+    "Zone-2 curve",
+)
+
 
 class PowerControlError(CloudError):
     """An action could not be verified against fresh controller state."""
@@ -49,9 +63,14 @@ async def async_set_zone1_power(
         after = await read_status()
         validate_power_status(after)
         if after[1:10] != before[1:10]:
+            changed = ", ".join(
+                f"{name} {before[index]} -> {after[index]}"
+                for index, name in enumerate(PROTECTED_SETTINGS, start=1)
+                if before[index] != after[index]
+            )
             raise PowerControlError(
-                "Controller settings changed during the power action; "
-                "check EcoLink before retrying"
+                f"Controller settings changed during the power action: {changed}. "
+                f"Observed Zone-1 power: {'On' if after[0] else 'Off'}"
             )
         if bool(after[0]) == enabled:
             return after
