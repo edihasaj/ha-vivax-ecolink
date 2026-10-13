@@ -25,6 +25,7 @@ PROTECTED_SETTINGS = (
     "Zone-1 curve",
     "Zone-2 curve",
 )
+DOUBLE_ZONE_ENABLE = 17
 
 
 class PowerControlError(CloudError):
@@ -35,6 +36,17 @@ def validate_power_status(status: bytes) -> None:
     """Reject unknown/truncated state rather than writing against cached data."""
     if len(status) < 10 or status[0] not in (0, 1):
         raise ProtocolError("Zone-1 power state is not available")
+
+
+def _inactive_zone2_mirror(before: bytes, after: bytes) -> bool:
+    """Allow only a disabled Zone-2 flag following Zone-1 in both snapshots."""
+    return (
+        len(before) > DOUBLE_ZONE_ENABLE
+        and len(after) > DOUBLE_ZONE_ENABLE
+        and before[DOUBLE_ZONE_ENABLE] == after[DOUBLE_ZONE_ENABLE] == 0
+        and before[1] == before[0]
+        and after[1] == after[0]
+    )
 
 
 async def async_set_zone1_power(
@@ -62,12 +74,21 @@ async def async_set_zone1_power(
     for attempt in range(3):
         after = await read_status()
         validate_power_status(after)
-        if after[1:10] != before[1:10]:
-            changed = ", ".join(
-                f"{name} {before[index]} -> {after[index]}"
-                for index, name in enumerate(PROTECTED_SETTINGS, start=1)
-                if before[index] != after[index]
+        if len(before) > DOUBLE_ZONE_ENABLE and (
+            len(after) <= DOUBLE_ZONE_ENABLE
+            or after[DOUBLE_ZONE_ENABLE] != before[DOUBLE_ZONE_ENABLE]
+        ):
+            raise PowerControlError(
+                "Zone-2 enable configuration changed or became unavailable "
+                "during the power action"
             )
+        inactive_mirror = _inactive_zone2_mirror(before, after)
+        changed = ", ".join(
+            f"{name} {before[index]} -> {after[index]}"
+            for index, name in enumerate(PROTECTED_SETTINGS, start=1)
+            if before[index] != after[index] and not (index == 1 and inactive_mirror)
+        )
+        if changed:
             raise PowerControlError(
                 f"Controller settings changed during the power action: {changed}. "
                 f"Observed Zone-1 power: {'On' if after[0] else 'Off'}"

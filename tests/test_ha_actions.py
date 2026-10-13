@@ -98,6 +98,25 @@ class HaPowerActionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.coordinator.data.zone1_target, 35)
         self.assertEqual(self.client.set_zone1_power.await_count, 2)
 
+    async def test_single_zone_switch_accepts_only_the_disabled_power_mirror(
+        self,
+    ) -> None:
+        self.status = ON + bytes(8)
+
+        async def single_zone_write(_device: str, enabled: bool) -> None:
+            self.status = bytes([int(enabled), int(enabled)]) + self.status[2:]
+
+        self.client.set_zone1_power.side_effect = single_zone_write
+        await self.coordinator.async_refresh()
+        switch = VivaxZone1PowerSwitch(self.coordinator)
+        await switch.async_turn_off()
+        self.assertFalse(switch.is_on)
+        self.assertEqual(self.coordinator.data.zone1_target, 35)
+        await switch.async_turn_on()
+        self.assertTrue(switch.is_on)
+        self.assertEqual(self.coordinator.data.zone1_target, 35)
+        self.assertEqual(self.client.set_zone1_power.await_count, 2)
+
     async def test_stale_cached_state_does_not_trigger_an_unnecessary_write(
         self,
     ) -> None:

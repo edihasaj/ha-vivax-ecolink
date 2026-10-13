@@ -24,6 +24,10 @@ state class and can be selected in the Energy dashboard.
   controller's electrical supply. It uses the exact model's vendor codec,
   preserves the target/mode/curve settings and confirms changes with fresh
   read-back. It does not optimistically report a requested state.
+- On a controller that explicitly reports Zone 2 disabled, its inactive Zone-2
+  power flag may mirror Zone 1. This is accepted only with fresh single-zone
+  evidence and matching power flags before and after; all other settings remain
+  protected. No Zone-2 command is sent.
 - Mode, target-temperature, DHW, Zone-2 and curve writes remain unavailable.
   See [control protocol and verification](docs/control-protocol.md).
 - Cooling totals are derived as total minus heating. This is valid only on an
