@@ -60,6 +60,14 @@ remain unchanged. A changed setting or an unconfirmed response fails visibly.
 No optimistic state, blind write retries, or automatic inverse/repair commands
 are used. Only an explicit authentication rejection permits a login and retry.
 
+Version 0.2.1 preserves the specific failure in the Home Assistant action error
+and a warning log. It distinguishes numeric cloud rejection codes, HTTP errors,
+timeouts, missing acknowledgements, invalid frame length/header/checksum, and
+read-back failures. Raw replies, account credentials and device identifiers
+are not logged. This diagnostic change does not relax validation or change the
+wire command. A failed action may already have reached the controller; check
+EcoLink before retrying and do not repeatedly cycle power.
+
 Protocol and isolated tests do not establish a live hardware power cycle.
 Before claiming hardware verification, obtain approval for one supervised
 Off/On cycle, record fresh before/after settings, and confirm the controller

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from aiohttp import ClientResponseError
@@ -55,6 +55,36 @@ async def test_http_401_expires_cached_access_token() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("error", "message"),
+    [
+        (
+            ClientResponseError(None, (), status=403),
+            "EcoLink HTTP request failed (status 403)",
+        ),
+        (TimeoutError("private-request-content"), "EcoLink request timed out"),
+    ],
+)
+async def test_transport_errors_are_specific_and_do_not_expose_request_content(
+    error: Exception, message: str
+) -> None:
+    response = UnauthorizedResponse()
+    response.raise_for_status = Mock(side_effect=error)
+    session = Mock()
+    session.post.return_value = response
+    client = VivaxCloudClient(
+        session,
+        "https://example.test",
+        ApplicationCredentials("secret", "client", "signing", "key"),
+    )
+    client._access_token = "private-token"
+    with pytest.raises(CloudError) as raised:
+        await client._post("/endpoint", {}, {})
+    assert str(raised.value) == message
+    assert client.authenticated is True
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("enabled", [False, True])
 async def test_power_transport_sends_only_the_verified_zone1_field(
     enabled: bool,
@@ -93,3 +123,32 @@ async def test_power_transport_rejects_errors_and_dhw_ack(
     client._business_request = AsyncMock(return_value=response)
     with pytest.raises(error):
         await client.set_zone1_power("test-appliance", True)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "message"),
+    [
+        ({"code": 1214}, "rejected the power command (code 1214)"),
+        (
+            {"code": "private-response-content"},
+            "rejected the power command (code unknown)",
+        ),
+        ({"code": 0, "data": None}, "returned no acknowledgement"),
+        ({"code": 0, "data": "aa"}, "unexpected length (1 bytes)"),
+    ],
+)
+async def test_power_errors_explain_the_failure_without_raw_response_content(
+    response: dict[str, object], message: str
+) -> None:
+    client = VivaxCloudClient(
+        UnauthorizedSession(),  # type: ignore[arg-type]
+        "https://example.test",
+        ApplicationCredentials("secret", "client", "signing", "key"),
+    )
+    client._business_request = AsyncMock(return_value=response)
+    with pytest.raises((CloudError, ProtocolError)) as error:
+        await client.set_zone1_power("private-appliance", False)
+    assert message in str(error.value)
+    assert "private-" not in str(error.value)
+    client._business_request.assert_awaited_once()

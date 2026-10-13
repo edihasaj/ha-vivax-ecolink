@@ -131,11 +131,15 @@ class VivaxCoordinator(DataUpdateCoordinator[VivaxTelemetry]):
                 )
                 self.async_set_updated_data(await self._telemetry(status))
         except (CloudError, ProtocolError) as err:
+            # These exceptions contain locally constructed explanations, not
+            # raw cloud responses, credentials or appliance identifiers.
+            _LOGGER.warning("Zone-1 power action failed: %s", err)
             # An uncertain action must still refresh observed state. No retry or
             # automatic inverse command: another client may have changed it.
             await self.async_request_refresh()
             raise HomeAssistantError(
-                "Unable to confirm heat-pump power; check EcoLink before retrying"
+                f"Unable to confirm heat-pump power: {err}. "
+                "Check EcoLink before retrying"
             ) from err
 
     async def _async_update_data(self) -> VivaxTelemetry:

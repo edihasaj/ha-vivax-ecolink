@@ -16,6 +16,7 @@ try:
     from custom_components.vivax_ecolink.cloud import AuthenticationError, CloudError
     from custom_components.vivax_ecolink.coordinator import VivaxCoordinator
     from custom_components.vivax_ecolink.models import VivaxDevice
+    from custom_components.vivax_ecolink.protocol import ProtocolError
     from custom_components.vivax_ecolink.switch import (
         VivaxZone1PowerSwitch,
         async_setup_entry,
@@ -227,6 +228,31 @@ class HaPowerActionTests(unittest.IsolatedAsyncioTestCase):
         await self.coordinator.async_refresh()
         self.assertFalse(switch.available)
         self.client.set_zone1_power.assert_not_awaited()
+
+    async def test_action_preserves_cloud_and_protocol_failure_reasons(self) -> None:
+        for error in (
+            CloudError("EcoLink rejected the power command (code 1214)"),
+            CloudError("EcoLink request timed out"),
+            ProtocolError("Power acknowledgement has an unexpected length (20 bytes)"),
+        ):
+            with self.subTest(reason=str(error)):
+                self.client.set_zone1_power.reset_mock()
+                self.client.set_zone1_power.side_effect = error
+                with (
+                    self.assertLogs(
+                        "custom_components.vivax_ecolink.coordinator", level="WARNING"
+                    ) as logs,
+                    self.assertRaises(HomeAssistantError) as raised,
+                ):
+                    await self.coordinator.async_set_zone1_power(False)
+                self.assertIn(str(error), str(raised.exception))
+                self.assertIs(raised.exception.__cause__, error)
+                self.assertIn(str(error), logs.output[0])
+                self.client.set_zone1_power.assert_awaited_once_with(
+                    "synthetic-device", False
+                )
+                self.client.login.assert_not_awaited()
+                self.assertTrue(self.coordinator.data.controller_power)
 
 
 if __name__ == "__main__":

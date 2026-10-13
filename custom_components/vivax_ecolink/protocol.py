@@ -32,16 +32,21 @@ def validate_power_ack(response_hex: str, enabled: bool) -> None:
         raw = bytes.fromhex(response_hex.replace(",", " "))
     except ValueError as err:
         raise ProtocolError("Power acknowledgement is not hexadecimal") from err
+    if len(raw) != 16:
+        raise ProtocolError(
+            f"Power acknowledgement has an unexpected length ({len(raw)} bytes)"
+        )
     if (
-        len(raw) != 16
-        or raw[0] != 0xAA
+        raw[0] != 0xAA
         or raw[1] != len(raw) - 1
         or raw[2] != DEVICE_TYPE_C3
         or raw[9] != 0x02
-        or sum(raw[1:]) & 0xFF
-        or raw[10:-1] != bytes.fromhex(zone1_power_command(enabled))
     ):
-        raise ProtocolError("EcoLink did not acknowledge the Zone-1 power command")
+        raise ProtocolError("Power acknowledgement is not a C3 control frame")
+    if sum(raw[1:]) & 0xFF:
+        raise ProtocolError("Power acknowledgement checksum is invalid")
+    if raw[10:-1] != bytes.fromhex(zone1_power_command(enabled)):
+        raise ProtocolError("Power acknowledgement does not match Zone-1 power")
 
 
 def decode_cloud_payload(response_hex: str, expected_subtype: int) -> bytes:

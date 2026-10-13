@@ -33,6 +33,12 @@ class AuthenticationError(CloudError):
     """Authentication failed or the access token expired."""
 
 
+def _response_code(result: dict[str, Any]) -> int | str:
+    """Expose only numeric vendor codes, never arbitrary response content."""
+    code = result.get("code")
+    return code if type(code) is int else "unknown"
+
+
 class VivaxCloudClient:
     """Minimal client for the endpoints used by VIVAX EcoLink."""
 
@@ -106,8 +112,12 @@ class VivaxCloudClient:
             if err.status == 401:
                 self._access_token = None
                 raise AuthenticationError("EcoLink access token expired") from err
-            raise CloudError("Unable to communicate with VIVAX EcoLink") from err
-        except (ClientError, TimeoutError, ValueError) as err:
+            raise CloudError(
+                f"EcoLink HTTP request failed (status {err.status})"
+            ) from err
+        except TimeoutError as err:
+            raise CloudError("EcoLink request timed out") from err
+        except (ClientError, ValueError) as err:
             raise CloudError("Unable to communicate with VIVAX EcoLink") from err
         if not isinstance(result, dict):
             raise CloudError("VIVAX EcoLink returned an invalid response")
@@ -146,7 +156,7 @@ class VivaxCloudClient:
         code = result.get("code")
         if isinstance(code, int) and 14000 <= code < 15000:
             raise AuthenticationError("EcoLink rejected the account credentials")
-        raise CloudError(f"EcoLink login failed with code {code}")
+        raise CloudError(f"EcoLink login failed with code {_response_code(result)}")
 
     async def _business_request(
         self, path: str, body_data: dict[str, Any]
@@ -177,7 +187,7 @@ class VivaxCloudClient:
         )
         if result.get("code") != 0 or not isinstance(result.get("data"), list):
             raise CloudError(
-                f"EcoLink device discovery failed with code {result.get('code')}"
+                f"EcoLink device discovery failed with code {_response_code(result)}"
             )
         return [VivaxDevice.from_cloud(item) for item in result["data"]]
 
@@ -192,7 +202,7 @@ class VivaxCloudClient:
         )
         if result.get("code") != 0 or not isinstance(result.get("data"), str):
             raise CloudError(
-                f"EcoLink device query failed with code {result.get('code')}"
+                f"EcoLink device query failed with code {_response_code(result)}"
             )
         return decode_cloud_payload(result["data"], subtype)
 
@@ -203,8 +213,10 @@ class VivaxCloudClient:
             "/midea/open/business/v1/appliance/control/hexadecimal",
             {"applianceCode": appliance_code, "command": command},
         )
-        if result.get("code") != 0 or not isinstance(result.get("data"), str):
+        if result.get("code") != 0:
             raise CloudError(
-                f"EcoLink power command failed with code {result.get('code')}"
+                f"EcoLink rejected the power command (code {_response_code(result)})"
             )
+        if not isinstance(result.get("data"), str):
+            raise CloudError("EcoLink power command returned no acknowledgement")
         validate_power_ack(result["data"], enabled)
